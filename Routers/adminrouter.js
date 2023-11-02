@@ -1,6 +1,9 @@
 const express=require("express")
 const app=express()
 const bodyparser = require("body-parser");
+
+const usercontroller=require('../Controller/usercontroller')
+
 const admincontroller=require('../Controller/admincontroller')
 const adminVerifyToken = require("../Middleware/adminmiddleware")
 app.use(bodyparser.json());
@@ -14,6 +17,7 @@ app.put("/productsupdate/:id", admincontroller.updateProduct);
 app.get("/products/:id", admincontroller.specificProducts);
 app.delete("/product/:id", admincontroller.deleteProduct);
 app.get("/products/category/:category", admincontroller.categoryData);
-app.get("/products", adminVerifyToken, usercontroller.allProducts);
-app.get("/products", adminVerifyToken, usercontroller.getallProducts);
+app.get("/products", adminVerifyToken, admincontroller.allProducts);
+ app.get("/products", adminVerifyToken, admincontroller.getallProducts);
+
 module.exports=app;

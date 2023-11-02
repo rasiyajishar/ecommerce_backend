@@ -92,19 +92,17 @@ const updateProduct = async (req, res) => {
   
 
  
-//get all products
 
+
+//get all products
 const getallProducts = async (req, res) => {
   try {
     const allProducts = await productSchema.find();
     res.json(allProducts);
   } catch (error) {
-    console.error(error); // Log the error for debugging
-    res.status(500).json({ error: "An error occurred while fetching products" });
+    res.json("error");
   }
 };
-
-
 
 const allProducts=async(req,res)=>{
   try{
@@ -178,10 +176,10 @@ const categoryData = async (req, res) => {
     specificUsers,
     createProducts,
     updateProduct,
-    getallProducts,
+     getallProducts,
     specificProducts,
     deleteProduct,
     categoryData,
-    allProducts
+     allProducts
     
   }

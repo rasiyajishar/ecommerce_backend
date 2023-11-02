@@ -39,7 +39,15 @@ const userLogin = async (req, res) => {
     }
   };
 
-
+  const allProducts = async (req, res) => {
+    try {
+      const allProducts = await productSchema.find();
+      res.json(allProducts);
+    } catch (err) {
+      res.json("error");
+    }
+  };
+  
 
 
 
@@ -69,6 +77,111 @@ res.json({message:"server error"})
 //   })
 // },
 
+
+
+const categorydata = async (req, res) => {
+  const categoryList = req.params.category;
+  console.log(categoryList);
+  try {
+  
+    if (categoryList == "nike") {
+      const findproduct = await productSchema.find({ category: { $in: "nike" } });
+      return res.json(findproduct);
+    }else {
+      res.status(404).json("not found the category");
+    }
+  } catch (error) {
+    console.log(err);
+    res.status(500).json("Server Error");
+  }
+};
+
+
+// const categorydatas = async(req,res)=>{
+//   const categorytype=req.params.category;
+//   console.log(categorytype);
+//   try{
+//     if(categorytype=="men"){
+//       const findproduct = await productSchema.find({category:{$in:"men"}});
+//       return res.json(findproduct)
+//     }else{
+//       res.status(404).json("not found the category")
+//     }
+//   }catch(error){
+//   res.status(500).json("server error")
+// }
+
+// }
+
+const addTocart = async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const product = await productSchema.findById(productId);
+    console.log(product);
+    if (!product) {
+      return res.json({ message: "product not found" });
+    }
+
+    const token = req.cookies.token;
+    const verified = jwt.verify(token, "secret-key");
+    console.log(verified);
+    const user = await userSchema.findOne({ email: verified.email });
+
+    // Add the product to the user's cart
+    user.cart.push(product);
+    await user.save();
+
+    res.json({ message: "Product added to the cart" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const getCart = async (req, res) => {
+  try {
+    const token = req.cookies.token;
+    const verified = jwt.verify(token, "secret-key");
+    console.log(verified);
+
+    const user = await userSchema.findOne({ email: verified.email });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const cartItems = user.cart;
+
+    res.status(200).json({ message: "Your cart products", cart: cartItems });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server error", error: error.message });
+  }
+};
+
+const removeCart = async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const token = req.cookies.token;
+    const verified = jwt.verify(token, "secret-key");
+
+    const user = await userSchema.findOne({ email: verified.email });
+    if (!user) {
+      res.status(404).json({ message: "user not found" });
+    }
+
+    const index = user.cart.indexOf(productId);
+    if (index == 1) {
+      return res.status(404).json({ message: "Product not found in cart" });
+    }
+
+    user.cart.splice(index, 1);
+    await user.save();
+    res.status(200).json({ message: "Product removed from your cart" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Server error", message: error.message });
+  }
+};
 
 
 

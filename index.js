@@ -1,7 +1,7 @@
 
 const express = require("express");
 const mongoose = require("mongoose");
-const usercontroller = require("./Controller/usercontroller");
+
 const cookieParser=require("cookie-parser")
 const app = express();
 const port = 4000;
@@ -16,7 +16,16 @@ mongoose.connect("mongodb://127.0.0.1:27017/ecommerce")
     console.error("Failed to connect to MongoDB", error.message);
   });
 
-app.post("/register", usercontroller.register);
+
+
+// admin routes
+const adminrouter = require('./Routers/adminrouter')
+app.use('/admin',adminrouter)
+
+// user route
+const userrouter = require('./Routers/userrouter')
+app.use('/user',userrouter)
+
 
 app.listen(port, () => {
   console.log("Server is running on port", port);

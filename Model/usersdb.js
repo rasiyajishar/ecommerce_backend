@@ -24,13 +24,14 @@ const userSchema= new mongoose.Schema({
 
 
     orders:[{
-
-
-    product:{
-        type:String
+ product:{
+        type:mongoose.userSchema.Types.ObjectId,
+        ref:productSchema
     },
 
-
+orderid:{
+    type:String
+},
     payment:{
         type:Number
 

@@ -2,52 +2,131 @@
 const productSchema=require("../Model/productsdb")
 const Razorpay = require("razorpay");
 const userSchema=require("../Model/usersdb")
+const Joi = require('joi'); 
+const bcrypt = require('bcrypt');
 
 const jwt=require("jsonwebtoken")
 const { Model, Schema } = require("mongoose");
+
+
+
+// Validation schema for user registration
+const registerValidationSchema = Joi.object({
+  username: Joi.string().required(),
+  email: Joi.string().email().required(),
+  password: Joi.string().min(6).required(),
+});
+
+// Validation schema for user login
+const loginValidationSchema = Joi.object({
+  email: Joi.string().email().required(),
+  password: Joi.string().min(6).required(),
+});
+//order validation schema
+const orderValidationSchema = Joi.object({
+  price: Joi.number().required(),
+});
+
+
+
 //register
-const register = async(req,res)=>{
-    console.log(req.body);
+// const register = async(req,res)=>{
+//     console.log(req.body);
+//     await userSchema.insertMany({
+//         username:req.body.username,
+//         email:req.body.email,
+//         password:req.body.password
+//     })
+//     res.json("user registered")
+// }
+
+
+
+
+const register = async (req, res) => {
+  try {
+    const { error } = registerValidationSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+//password hashing
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(req.body.password, saltRounds);
+
+    
     await userSchema.insertMany({
-        username:req.body.username,
-        email:req.body.email,
-        password:req.body.password
-    })
-    res.json("user registered")
-}
+      username: req.body.username,
+      email: req.body.email,
+      password: hashedPassword,
+    });
 
-
+    res.json("User registered successfully");
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Server error" });
+  }
+};
 
 
 //login
 
-const userLogin = async (req, res) => {
-    try {
-      const login = await userSchema.findOne({ email: req.body.email });
+// const userLogin = async (req, res) => {
+//     try {
+//       const login = await userSchema.findOne({ email: req.body.email });
   
-      if (login && login.email === req.body.email && login.password === req.body.password) {
+//       if (login && login.email === req.body.email && login.password === req.body.password) {
+//         const token = jwt.sign({ email: login.email }, "secret-key");
+//         res.cookie("token", token);
+//         res.json({ message: "User logged in successfully" });
+//         return;
+//       }
+  
+//       res.status(401).json({ error: "Wrong password or email" });
+//     } catch (error) {
+//       console.log(error);
+//       res.status(500).json({ error: "Server error" });
+//     }
+//   };
+
+ 
+  
+
+const userLogin = async (req, res) => {
+  try {
+    const { error } = loginValidationSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    const login = await userSchema.findOne({ email: req.body.email });
+
+    if (login && login.email === req.body.email) {
+      const passwordMatch = await bcrypt.compare(req.body.password, login.password);
+      if (passwordMatch) {
         const token = jwt.sign({ email: login.email }, "secret-key");
         res.cookie("token", token);
         res.json({ message: "User logged in successfully" });
         return;
       }
-  
-      res.status(401).json({ error: "Wrong password or email" });
-    } catch (error) {
-      console.log(error);
-      res.status(500).json({ error: "Server error" });
     }
-  };
 
-  const allProducts = async (req, res) => {
-    try {
-      const allProducts = await productSchema.find();
-      res.json(allProducts);
-    } catch (err) {
-      res.json("error");
-    }
-  };
-  
+    res.status(401).json({ error: "Wrong password or email" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+
+
+const allProducts = async (req, res) => {
+  try {
+    const allProducts = await productSchema.find();
+    res.json(allProducts);
+  } catch (err) {
+    res.json("error");
+  }
+};
 
 
 
@@ -185,14 +264,6 @@ const removeCart = async (req, res) => {
 
 
 
-
-
-
-
-
-
-
-
   //addtowishlist
   const addToWishlist = async (req, res) => {
     try {
@@ -206,6 +277,11 @@ const removeCart = async (req, res) => {
       const token = req.cookies.token;
       const decoded = jwt.verify(token, "secret-key");
       
+      const user = await userSchema.findOne({ email: decoded.email });
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
       user.wishlist.push(product);
       await user.save();
   
@@ -264,35 +340,89 @@ const removeCart = async (req, res) => {
   };
 
 
+  // const orderProducts = async (req, res) => {
+  //   try {
+  //     const productId = req.params.id;
+  //     const product = await productSchema.findById(productId);
+  //     if (!product) {
+  //       return res.status(404).json({ message: "product not found" });
+  //     }
+  //     const token = req.cookies.token;
+  //     const verified = jwt.verify(token, "secret-key");
+  //     const user = await userSchema.findOne({ email: verified.email });
+  
+  //     const orderDate = new Date();
+  //     const { price } = product;
+  
+  //     if (price !== req.body.price) {
+  //       return res
+  //         .status(400)
+  //         .json({ message: "THe entered price does not mach the product price" });
+  //     }
+  
+  //     const instance = new Razorpay({
+  //       key_id: "rzp_test_lcdp3oIEzg2qkR",
+  //       key_secret: "elHVCagf8LjkX7AEhQL194tM",
+  //     });
+  
+  //     const order = await instance.orders.create({
+  //       amount: price * 100,
+  //       currency: "INR",
+  //       receipt: "Receipt",
+  //     });
+  
+  //     user.orders.push({
+  //       product: productId,
+  //       orderId: order.id,
+  //       payment: price,
+  //       orderDate,
+  //     });
+  //     await user.save();
+  //     res.status(200).json({ message: "payment successfull....order comfirmed" });
+  //   } catch (error) {
+  //     console.log(error);
+  //     res.status(500).json({ message: "server error" });
+  //   }
+  // };
+
+  
   const orderProducts = async (req, res) => {
     try {
       const productId = req.params.id;
       const product = await productSchema.findById(productId);
+  
       if (!product) {
-        return res.status(404).json({ message: "product not found" });
+        return res.status(404).json({ message: 'Product not found' });
       }
+  
       const token = req.cookies.token;
-      const verified = jwt.verify(token, "secret-key");
+      const verified = jwt.verify(token, 'secret-key');
       const user = await userSchema.findOne({ email: verified.email });
   
       const orderDate = new Date();
       const { price } = product;
   
+      // Validate req.body using the Joi schema
+      const { error } = orderValidationSchema.validate(req.body);
+  
+      if (error) {
+        return res.status(400).json({ message: error.details[0].message });
+      }
+  
+    
       if (price !== req.body.price) {
-        return res
-          .status(400)
-          .json({ message: "THe entered price does not mach the product price" });
+        return res.status(400).json({ message: 'The entered price does not match the product price' });
       }
   
       const instance = new Razorpay({
-        key_id: "rzp_test_lcdp3oIEzg2qkR",
-        key_secret: "elHVCagf8LjkX7AEhQL194tM",
+        key_id: 'rzp_test_lcdp3oIEzg2qkR',
+        key_secret: 'elHVCagf8LjkX7AEhQL194tM',
       });
   
       const order = await instance.orders.create({
         amount: price * 100,
-        currency: "INR",
-        receipt: "Receipt",
+        currency: 'INR',
+        receipt: 'Receipt',
       });
   
       user.orders.push({
@@ -302,14 +432,16 @@ const removeCart = async (req, res) => {
         orderDate,
       });
       await user.save();
-      res.status(200).json({ message: "payment successfull....order comfirmed" });
+  
+      res.status(200).json({ message: 'Payment successful. Order confirmed' });
     } catch (error) {
       console.log(error);
-      res.status(500).json({ message: "server error" });
+      res.status(500).json({ message: 'Server error' });
     }
   };
-
   
+
+
 
 module.exports={register,
     userLogin,

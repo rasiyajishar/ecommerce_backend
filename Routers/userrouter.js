@@ -21,6 +21,4 @@ app.get("/wishlist", verifyToken, usercontroller.getWishlist);
 app.delete("/products/wishlist/:id",verifyToken,usercontroller.removeWishlist);
 app.post("/order/:id", verifyToken, usercontroller.orderProducts);
 
-
-
 module.exports=app;

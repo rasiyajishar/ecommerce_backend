@@ -4,19 +4,20 @@ const productSchema = mongoose.Schema({
         type:String,
         required:true
     },
-    description:{
-        type:String,
-        required:true
-    },
-    price:{
-        type:Number,
-        required:true
-    },
     image:{
         type:String,
         required:false
 
     },
+    description:{
+        type:String,
+        required:false
+    },
+    price:{
+        type:Number,
+        required:true
+    },
+   
     category:{
         type:String,
         required:true

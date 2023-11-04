@@ -1,5 +1,10 @@
+
+const mongoose = require("mongoose");
 const userSchema=require("../Model/usersdb")
 const productSchema=require("../Model/productsdb")
+
+const Joi = require("joi");
+const bcrypt = require("bcrypt");
 
 const jwt=require("jsonwebtoken")
 const login = async (req, res) => {
@@ -14,12 +19,56 @@ const login = async (req, res) => {
       const token = jwt.sign({ email }, "your-secret-key");
       res.cookie("token", token);
       res.setHeader("Authorization", token);
-      res.status(200).json({ message: "Admin registrade" });
+      res.status(200).json({ message: "Admin registered" });
     } catch (error) {
       console.log(error);
       return res.status(500).json({ error: "Server error" });
     }
   };
+
+
+// const login = async (req, res) => {
+//   try {
+//     const { email, password } = req.body;
+
+//     // Validate the request body using Joi
+//     const schema = Joi.object({
+//       email: Joi.string().email().required(),
+//       password: Joi.string().min(6).required(),
+//     });
+
+//     const { error } = schema.validate(req.body);
+
+//     if (error) {
+//       return res.status(400).json({ error: error.details[0].message });
+//     }
+
+//     // Replace the following block with database lookup logic
+//     // Check if email and password are valid
+//     const user = await userSchema.findOne({ email });
+//     if (!user) {
+//       throw new Error("Invalid Email or Password");
+//     }
+
+//     const passwordMatch = await bcrypt.compare(password, user.password);
+//     if (!passwordMatch) {
+//       throw new Error("Invalid Email or Password");
+//     }
+
+//     const token = jwt.sign({ email }, "your-secret-key");
+//     res.cookie("token", token);
+//     res.setHeader("Authorization", token);
+//     res.status(200).json({ message: "Admin registered" });
+//   } catch (error) {
+//     console.log(error);
+//     return res.status(500).json({ error: "Server error" });
+//   }
+// };
+
+
+
+
+
 
 
   //all users
@@ -50,17 +99,50 @@ const login = async (req, res) => {
 //create a product
 
 const createProducts = async (req, res) => {
-    console.log(req.body);
+    
     await productSchema.insertMany({
       title: req.body.title,
       description: req.body.description,
       price: req.body.price,
-      image: req.body.image,
+      image: req.imageUrl,
       category: req.body.category,
     });
-    res.json("product create succusss");
+    res.json("product create successfully");
   };
   
+
+
+
+
+// // Create a product
+// const createProducts = async (req, res) => {
+//   try {
+//     const { title, description, price, category } = req.body;
+//     const image = req.imageUrl; // Use the image URL obtained from Cloudinary
+
+//     // Check if required fields are present
+//     if (!title || !price || !category || !image) {
+//       return res.status(400).json({ message: "Please provide all required product details" });
+//     }
+
+//     // Create the product
+//     const product = new productSchema({
+//       title,
+//       description,
+//       price,
+//       image,
+//       category,
+//     });
+
+//     await product.save();
+//     res.status(201).json({ message: "Product created successfully", product });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: "Error creating the product" });
+//   }
+// };
+
+
 
   // update product
 const updateProduct = async (req, res) => {
@@ -74,9 +156,9 @@ const updateProduct = async (req, res) => {
   
       const result = await productSchema.findByIdAndUpdate(productId, {
         title,
+        image,
         description,
         price,
-        image,
         category,
       });
       console.log(result);
